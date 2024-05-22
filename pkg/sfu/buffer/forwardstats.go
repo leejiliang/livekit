@@ -6,7 +6,9 @@ import (
 )
 
 const (
-	jitterUpdateInterval = 10 * time.Millisecond
+	jitterUpdateInterval = 1 * time.Millisecond
+	rttUpdateInterval    = time.Second
+	rttWindowLength      = 5 * time.Second
 )
 
 type ForwardStats struct {
@@ -14,21 +16,30 @@ type ForwardStats struct {
 	latency uint32
 
 	lastPktTimeStamp time.Time
-	lastTransit      time.Time
+	lastTransit      time.Duration
 	jitter           time.Duration
+
+	delay *LatencyAggregate
 }
 
 func NewForwardStats() *ForwardStats {
-	return &ForwardStats{}
+	return &ForwardStats{
+		delay: NewLatencyAggregate(50*time.Millisecond, time.Second),
+	}
 }
 
 func (s *ForwardStats) Update(arrival, left time.Time) {
+	transit := left.Sub(arrival)
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	delay := left.Sub(arrival)
+	s.delay.Update(time.Duration(arrival.UnixNano()), float64(transit))
 	if arrival.Sub(s.lastPktTimeStamp) > jitterUpdateInterval {
-		// s.latency = uint32(delay.Milliseconds())
-		s.jitter += (delay - s.jitter) / 16
+		d := transit - s.lastTransit
+		s.lastTransit = transit
+		if d < 0 {
+			d = -d
+		}
+		s.jitter += (d - s.jitter) / 16
 		s.lastPktTimeStamp = arrival
 	}
 }
@@ -37,4 +48,10 @@ func (s *ForwardStats) GetJitter() time.Duration {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	return s.jitter
+}
+
+func (s *ForwardStats) GetLatency() time.Duration {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	return time.Duration(s.delay.Summarize().Mean())
 }
