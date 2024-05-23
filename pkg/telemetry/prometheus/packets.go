@@ -56,7 +56,7 @@ var (
 	promRTT             *prometheus.HistogramVec
 	promParticipantJoin *prometheus.CounterVec
 	promConnections     *prometheus.GaugeVec
-	promForwardLaytency prometheus.Gauge
+	promForwardLatency  prometheus.Gauge
 	promForwardJitter   prometheus.Gauge
 
 	promPacketTotalIncomingInitial    prometheus.Counter
@@ -141,7 +141,7 @@ func initPacketStats(nodeID string, nodeType livekit.NodeType) {
 		Name:        "total",
 		ConstLabels: prometheus.Labels{"node_id": nodeID, "node_type": nodeType.String()},
 	}, []string{"kind"})
-	promForwardLaytency = prometheus.NewGauge(prometheus.GaugeOpts{
+	promForwardLatency = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace:   livekitNamespace,
 		Subsystem:   "forward",
 		Name:        "latency",
@@ -296,7 +296,7 @@ func SubConnection(direction Direction) {
 }
 
 func RecordForwardLatency(latency float64) {
-	promForwardLaytency.Set(latency)
+	promForwardLatency.Set(latency)
 }
 
 func RecordForwardJitter(jitter float64) {

@@ -127,7 +127,7 @@ type WebRTCReceiver struct {
 	redReceiver     atomic.Pointer[RedReceiver]
 	redPktWriter    func(pkt *buffer.ExtPacket, spatialLayer int32)
 
-	forwardStats *buffer.ForwardStats
+	forwardStats *ForwardStats
 }
 
 // SVC-TODO: Have to use more conditions to differentiate between
@@ -186,7 +186,7 @@ func WithLoadBalanceThreshold(downTracks int) ReceiverOpts {
 	}
 }
 
-func WithForwardStats(forwardStats *buffer.ForwardStats) ReceiverOpts {
+func WithForwardStats(forwardStats *ForwardStats) ReceiverOpts {
 	return func(w *WebRTCReceiver) *WebRTCReceiver {
 		w.forwardStats = forwardStats
 		return w
