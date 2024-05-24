@@ -109,3 +109,5 @@ require (
 	google.golang.org/grpc v1.63.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
+
+replace github.com/livekit/protocol v1.14.1-0.20240426104403-e7962f444464 => github.com/leejiliang/protocol v1.16.1-0.20240524073922-d8a1ea25f6cb
