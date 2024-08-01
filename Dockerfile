@@ -14,6 +14,9 @@
 
 FROM golang:1.22-alpine as builder
 
+ENV GO111MODULE=on
+ENV GOPROXY=https://goproxy.cn
+
 ARG TARGETPLATFORM
 ARG TARGETARCH
 RUN echo building for "$TARGETPLATFORM"
