@@ -17,6 +17,7 @@ package service
 import (
 	"context"
 	"strconv"
+	"strings"
 
 	"github.com/avast/retry-go/v4"
 	"github.com/pkg/errors"
@@ -299,7 +300,7 @@ func (s *RoomService) UpdateRoomMetadata(ctx context.Context, req *livekit.Updat
 		return nil, err
 	}
 
-	if created {
+	if created || strings.Contains(req.Metadata, "rejoin-agent") {
 		go s.agentClient.LaunchJob(ctx, &agent.JobDescription{
 			JobType: livekit.JobType_JT_ROOM,
 			Room:    room,
