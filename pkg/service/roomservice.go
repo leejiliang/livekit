@@ -16,7 +16,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -258,6 +257,13 @@ func (s *RoomService) SendData(ctx context.Context, req *livekit.SendDataRequest
 
 func (s *RoomService) UpdateRoomMetadata(ctx context.Context, req *livekit.UpdateRoomMetadataRequest) (*livekit.Room, error) {
 	AppendLogFields(ctx, "room", req.Room, "size", len(req.Metadata))
+	room, _, err := s.roomStore.LoadRoom(ctx, livekit.RoomName(req.Room), false)
+	if strings.Contains(req.Metadata, "rejoin-agent") {
+		go s.agentClient.LaunchJob(ctx, &agent.JobDescription{
+			JobType: livekit.JobType_JT_ROOM,
+			Room:    room,
+		})
+	}
 	maxMetadataSize := int(s.roomConf.MaxMetadataSize)
 	if maxMetadataSize > 0 && len(req.Metadata) > maxMetadataSize {
 		return nil, twirp.InvalidArgumentError(ErrMetadataExceedsLimits.Error(), strconv.Itoa(maxMetadataSize))
@@ -267,7 +273,6 @@ func (s *RoomService) UpdateRoomMetadata(ctx context.Context, req *livekit.Updat
 		return nil, twirpAuthError(err)
 	}
 
-	room, _, err := s.roomStore.LoadRoom(ctx, livekit.RoomName(req.Room), false)
 	if err != nil {
 		return nil, err
 	}
@@ -278,13 +283,6 @@ func (s *RoomService) UpdateRoomMetadata(ctx context.Context, req *livekit.Updat
 		Name:     req.Room,
 		Metadata: req.Metadata,
 	})
-	fmt.Print("receiveMetaData req: " + req.Metadata)
-	if created || strings.Contains(req.Metadata, "rejoin-agent") {
-		go s.agentClient.LaunchJob(ctx, &agent.JobDescription{
-			JobType: livekit.JobType_JT_ROOM,
-			Room:    room,
-		})
-	}
 
 	if err != nil {
 		return nil, err
@@ -307,6 +305,13 @@ func (s *RoomService) UpdateRoomMetadata(ctx context.Context, req *livekit.Updat
 	})
 	if err != nil {
 		return nil, err
+	}
+
+	if created && !strings.Contains(req.Metadata, "rejoin-agent") {
+		go s.agentClient.LaunchJob(ctx, &agent.JobDescription{
+			JobType: livekit.JobType_JT_ROOM,
+			Room:    room,
+		})
 	}
 
 	return room, nil
