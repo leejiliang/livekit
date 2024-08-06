@@ -256,7 +256,7 @@ func (s *RoomService) SendData(ctx context.Context, req *livekit.SendDataRequest
 }
 
 func (s *RoomService) UpdateRoomMetadata(ctx context.Context, req *livekit.UpdateRoomMetadataRequest) (*livekit.Room, error) {
-	AppendLogFields(ctx, "room", req.Room, "size", len(req.Metadata))
+	AppendLogFields(ctx, "room", req.Room, "size", len(req.Metadata), "content", req.Metadata)
 	room, _, err := s.roomStore.LoadRoom(ctx, livekit.RoomName(req.Room), false)
 	if strings.Contains(req.Metadata, "rejoin-agent") {
 		go s.agentClient.LaunchJob(ctx, &agent.JobDescription{
